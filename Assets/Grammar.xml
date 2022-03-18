@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<grammar version="1.0" xml:lang="fr-FR" xmlns="http://www.w3.org/2001/06/grammar" tag-format="semantics/1.0" root="Main">
+  <rule id="Main">
+    <one-of>
+		<item>
+			<ruleref uri="#deplacement"/>
+		</item>
+		<item>
+			<ruleref uri="#selection"/>
+		</item>
+    </one-of>
+  </rule>
+  <rule id="deplacement">
+    <one-of>
+      <item>déplacement</item>
+      <item>déplace</item>
+	  <item>déplacer</item>
+	  <item>bouger</item>
+	  <item>bouge</item>
+	</one-of>
+  </rule>
+  <rule id="selection">
+	  <one-of>
+		  <item>sélection</item>
+		  <item>sélectionner</item>
+		  <item>sélectionne</item>
+		  <item>attraper</item>
+		  <item>attrape</item>
+	  </one-of>
+  </rule>
+</grammar>
