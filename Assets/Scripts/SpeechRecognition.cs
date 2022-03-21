@@ -9,6 +9,8 @@ public class SpeechRecognition : MonoBehaviour
     public GameObject move_go;
     public GameObject grab_go;
     public GameObject sphere_go;
+    public GameObject TP_zone_go;
+    
     /// <summary>
     /// Class to store the method associated to a command, as well as it's parameters.
     /// </summary>
@@ -151,12 +153,14 @@ public class SpeechRecognition : MonoBehaviour
             case Command.Type.deplacement:
                 grab_go.GetComponent<globalGrab>().enabled = false;
                 move_go.GetComponent<gazeMove>().enabled = true;
-                sphere_go.SetActive(false); // TODO : tester
+                sphere_go.SetActive(false);
+                TP_zone_go.SetActive(true);
                 break;
             case Command.Type.selection:
                 grab_go.GetComponent<globalGrab>().enabled = true;
                 move_go.GetComponent<gazeMove>().enabled = false;
-                sphere_go.SetActive(true); // TODO : tester
+                sphere_go.SetActive(true);
+                TP_zone_go.SetActive(false);
                 break;
         }
 	}

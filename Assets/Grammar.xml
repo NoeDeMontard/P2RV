@@ -8,6 +8,7 @@
 		<item>
 			<ruleref uri="#selection"/>
 		</item>
+		<item>test</item>
     </one-of>
   </rule>
   <rule id="deplacement">

@@ -5,30 +5,23 @@ using UnityEngine;
 public class handControl : MonoBehaviour
 {
     // Cinématique inverse
-    public Transform positionDeReposDeLaMain;
-    
+    public Transform positionDeReposDeLaMainGauche;
+    public Transform positionDeReposDeLaMainDroite;
 
-    public Transform positionDeLaMain;
-
-    // Start is called before the first frame update
-    void Start()
+    private void Update()
     {
-        
-        positionDeLaMain = positionDeReposDeLaMain;
+        transform.GetChild(2).SetPositionAndRotation(positionDeReposDeLaMainDroite.position, positionDeReposDeLaMainDroite.rotation);
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        transform.GetChild(1).SetPositionAndRotation(positionDeLaMain.position, positionDeLaMain.rotation);
-    }
-
     public void ResetHandPosition()
     {
-        positionDeLaMain = positionDeReposDeLaMain;
+        transform.GetChild(1).SetPositionAndRotation(positionDeReposDeLaMainGauche.position, positionDeReposDeLaMainGauche.rotation);
+        //transform.GetChild(2).SetPositionAndRotation(positionDeReposDeLaMainDroite.position, Quaternion.identity);
     }
     public void SetHandPosition(Transform position)
     {
-        positionDeLaMain = position;
+        transform.GetChild(1).position = position.position;
+        
+        //transform.GetChild(2).SetPositionAndRotation(positionDeReposDeLaMainDroite.position, Quaternion.identity);
+
     }
 }

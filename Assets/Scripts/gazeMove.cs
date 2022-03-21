@@ -32,12 +32,13 @@ public class gazeMove : MonoBehaviour
 
         rot_speed = initial_speed;
 
-        TPzone = gameObject.transform.GetChild(2).gameObject; 
+        TPzone = transform.Find("TPzone").gameObject; 
     }
 
     // Update is called once per frame
     void Update()
     {
+        GetComponent<handControl>().ResetHandPosition();
         var gazeRay = Tobii.XR.TobiiXR.GetEyeTrackingData(Tobii.XR.TobiiXR_TrackingSpace.World).GazeRay;
         var localGazeData = Tobii.XR.TobiiXR.GetEyeTrackingData(Tobii.XR.TobiiXR_TrackingSpace.Local);
         bool IsLeftEyeBlinking = localGazeData.IsLeftEyeBlinking;

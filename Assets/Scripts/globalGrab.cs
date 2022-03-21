@@ -7,7 +7,7 @@ public class globalGrab : MonoBehaviour
 {
 
     public RaycastHit looked;
-    public GameObject grabed;
+    public GameObject grabedObject;
     private bool staygrab = false; // Si l'objet restera attrapé d'ici le prochain Update
     private bool grab = false;
     private bool ungrab = false;
@@ -28,11 +28,8 @@ public class globalGrab : MonoBehaviour
     private Color _originalColor;
     private static readonly int _emissionColor = Shader.PropertyToID("_EmissionColor");
     private Color highlightColor = Color.red;
-
-    /*// Cinématique inverse
-    public Transform positionDeReposDeLaMain;
-    public Quaternion positionDeReposDeLaMainDecalage;*/
-    protected handControl handControl;
+    private GameObject highlightedObject;
+    private bool removeHighlight;
 
     // Coefficients de rapprochements
     private float coefBlinking;
@@ -63,12 +60,6 @@ public class globalGrab : MonoBehaviour
         return moy;
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        handControl = GetComponent<handControl>();
-    }
-
     // Update is called once per frame
     void Update()
     {
@@ -93,10 +84,10 @@ public class globalGrab : MonoBehaviour
         bool eyesClosed = (blinkingTime >= maxBlinkingTime);
 
         grab = Tobii.XR.ControllerManager.Instance.GetButtonPressDown(Tobii.XR.ControllerButton.Trigger);
-        grab = grab || (eyesClosed && grabed==null);
+        grab = grab || (eyesClosed && grabedObject==null);
 
         ungrab = Tobii.XR.ControllerManager.Instance.GetButtonPressUp(Tobii.XR.ControllerButton.Trigger);
-        ungrab = ungrab || (eyesClosed && grabed!=null);
+        ungrab = ungrab || (eyesClosed && grabedObject!=null);
 
         grab = grab && !staygrab;
         ungrab = ungrab && !staygrab;
@@ -113,10 +104,10 @@ public class globalGrab : MonoBehaviour
 
         }
 
-        //looked = null;
+        Ray ray = new Ray();
         if (gazeRay.IsValid)
         {
-            Ray ray = new Ray(Camera.main.transform.position, gazeRay.Direction);
+            ray = new Ray(Camera.main.transform.position, gazeRay.Direction);
             if (Physics.Raycast(ray, out RaycastHit hit, maxDistance))
             {
                 // sauvegarde de l'objet regardé
@@ -124,11 +115,29 @@ public class globalGrab : MonoBehaviour
                 // rapprocher l'objet s'il est derriere un mur
                 if (!hit.transform.gameObject.CompareTag("grabbable"))
                 {
+                    //enlever le highlight de l'objet precedement vu
+                    removeHighlight = true;
+                    //sauvegarde de la nouvelle distance max
                     maxobjectDistance = hit.distance;
                     if (maxobjectDistance < 5 * minobjectDistance)
                         maxobjectDistance = 5 * minobjectDistance;
                 }
+                else if(highlightedObject == null)
+                {
+                    // Code permettant de highlight l'objet grabbable vu s'il n'est pas attrapé
+                    highlightedObject = hit.transform.gameObject;
+                    if (highlightedObject != grabedObject)
+                    {
+                        _originalColor = highlightedObject.GetComponent<MeshRenderer>().material.GetColor(_emissionColor);
+                        var newColor = Color.Lerp(_originalColor, highlightColor, 1.0f);
+                        highlightedObject.GetComponent<MeshRenderer>().material.SetColor(_emissionColor, newColor);
+
+                    }
+
+                }
             }
+            else
+                removeHighlight = true;
         }
 
         if (grab)
@@ -136,12 +145,9 @@ public class globalGrab : MonoBehaviour
             if (looked.transform!=null && looked.transform.gameObject.CompareTag("grabbable"))
             {
                 objectDistance = looked.distance;
-                grabed = looked.transform.gameObject;
-                
-                // Code permettant de highlight l'objet grabbed 
-                _originalColor = grabed.GetComponent<Renderer>().material.GetColor(_emissionColor);
-                var newColor = Color.Lerp(_originalColor, highlightColor, 1.0f);
-                grabed.GetComponent<Renderer>().material.SetColor(_emissionColor, newColor);
+                grabedObject = looked.transform.gameObject;
+                //on demande d'arreter de highlight l'objet attrapé
+                removeHighlight = true;
             }
 
             blinkingTime = 0;
@@ -150,14 +156,21 @@ public class globalGrab : MonoBehaviour
         } 
         else if (ungrab)
         {
-            // On redonne la couleur initiale à l'objet avant de le relacher
-            grabed.GetComponent<Renderer>().material.SetColor(_emissionColor, _originalColor);
-            grabed = null;
+            //on relache l'objet
+            grabedObject = null;
             Debug.Log("Ungrabbed");
 
         }
 
-        if (grabed != null)
+        // On redonne la couleur initiale à l'objet
+        if (removeHighlight && highlightedObject != null)
+        {
+            highlightedObject.GetComponent<MeshRenderer>().material.SetColor(_emissionColor, _originalColor);
+            highlightedObject = null;
+            removeHighlight = false;
+        }
+
+        if (grabedObject != null)
         {
             // Rapprocher l'objet avec la manette
             if (Tobii.XR.ControllerManager.Instance.GetButtonPress(Tobii.XR.ControllerButton.TouchpadTouch))
@@ -193,13 +206,13 @@ public class globalGrab : MonoBehaviour
             // Changement de la position
             if (gazeRay.IsValid)
             {
-                Ray ray = new Ray(Camera.main.transform.position, gazeRay.Direction);
+                //Ray ray = new Ray(Camera.main.transform.position, gazeRay.Direction);
 
                 // On stablisise l'objet attrapé par une moyenne
                 dataGaze[nbFrame] = ray.GetPoint(objectDistance);
                 moyenneGaze = moyenne(dataGaze);
 
-                grabed.transform.SetPositionAndRotation(moyenneGaze, Quaternion.identity);
+                grabedObject.transform.SetPositionAndRotation(moyenneGaze, Quaternion.identity);
 
                 nbFrame++;
                 if (nbFrame == nbFramesMax)
@@ -209,13 +222,13 @@ public class globalGrab : MonoBehaviour
             }
 
             // Cinématique inverse pour la main
-            handControl.SetHandPosition(grabed.transform);
-            //transform.GetChild(1).SetPositionAndRotation(grabed.transform.position, Quaternion.identity);
+            GetComponent<handControl>().SetHandPosition(grabedObject.transform);
+            //transform.GetChild(1).SetPositionAndRotation(grabedObject.transform.position, Quaternion.identity);
         }
         else // Rien n'est attrapé
         {
-            handControl.ResetHandPosition();
-            //transform.GetChild(1).SetPositionAndRotation(positionDeReposDeLaMain.TransformPoint(-4,9,-15), positionDeReposDeLaMain.rotation);
+            GetComponent<handControl>().ResetHandPosition();
+            //transform.GetChild(1).SetPositionAndRotation(positionDeReposDeLaMain.position/*.TransformPoint(-4,9,-15)*/, positionDeReposDeLaMain.rotation);
         }
     }
 }
