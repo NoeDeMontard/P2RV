@@ -65,6 +65,7 @@ public class globalGrab : MonoBehaviour
     {
 
         Physics.gravity = new Vector3(0, -1, 0);
+
         var gazeRay = Tobii.XR.TobiiXR.GetEyeTrackingData(Tobii.XR.TobiiXR_TrackingSpace.World).GazeRay;
         var localGazeData = Tobii.XR.TobiiXR.GetEyeTrackingData(Tobii.XR.TobiiXR_TrackingSpace.Local);
 
@@ -73,36 +74,31 @@ public class globalGrab : MonoBehaviour
         leftClosed = opened && localGazeData.IsLeftEyeBlinking;
         rightClosed = opened && localGazeData.IsRightEyeBlinking;
 
-        if (!staygrab && !opened)
+        //permettre de redonner un ordre
+        if (opened)
+            staygrab = false;
+
+        if (!staygrab && !opened) //Si les yeux sont fermés et qu'aucun orde est donné
         {
             blinkingTime++;
         }
-        else
+        else //Si on ouvre les yeux ou si on a deja donné un ordre
         {
             blinkingTime = 0;
         }
+
         bool eyesClosed = (blinkingTime >= maxBlinkingTime);
 
-        grab = Tobii.XR.ControllerManager.Instance.GetButtonPressDown(Tobii.XR.ControllerButton.Trigger);
-        grab = grab || (eyesClosed && grabedObject==null);
+        bool triggerPressed = Tobii.XR.ControllerManager.Instance.GetButtonPressDown(Tobii.XR.ControllerButton.Trigger);
 
-        ungrab = Tobii.XR.ControllerManager.Instance.GetButtonPressUp(Tobii.XR.ControllerButton.Trigger);
-        ungrab = ungrab || (eyesClosed && grabedObject!=null);
+        // Ordre d'attraper via la manette ou en fermant les yeux
+        grab = (triggerPressed || (eyesClosed && !staygrab)) && grabedObject== null;
+        // Ordre de relacher via la manette ou en fermant les yeux
+        ungrab = (triggerPressed || (eyesClosed && !staygrab)) && grabedObject!=null ;
 
-        grab = grab && !staygrab;
-        ungrab = ungrab && !staygrab;
-
-        if (opened)
-        {
-            staygrab = false;
-            Debug.Log("staygrab false");
-        }
+        // Empecher de prendre et lacher en boucle si on garde les yeux fermés
         if (grab || ungrab)
-        {
             staygrab = true;
-            Debug.LogWarning("staygrab true");
-
-        }
 
         Ray ray = new Ray();
         if (gazeRay.IsValid)
